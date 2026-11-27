@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RioLima M3U Converter</title>
+<style>
+body {
+  background:#101827;
+  color:white;
+  font-family:Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  margin:0;
+}
+.container {
+  background:#1e293b;
+  padding:30px;
+  border-radius:16px;
+  width:90%;
+  max-width:550px;
+  box-sizing:border-box;
+}
+h1 {color:#38bdf8;text-align:center}
+p {color:#cbd5e1}
+textarea {
+  width:100%;
+  height:90px;
+  box-sizing:border-box;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #475569;
+  background:#0f172a;
+  color:white;
+  resize:vertical;
+  font-size:14px;
+}
+button {
+  padding:12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-top:12px;
+}
+.convert {background:#0284c7;color:white;width:100%}
+.copy {background:#16a34a;color:white;width:100%}
+.clear {background:#475569;color:white;width:100%}
+#status {margin-top:12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>RioLima M3U</h1>
+<p>Coloca a tua linha IPTV original:</p>
+
+<textarea id="entrada" placeholder="http://servidor:8080/playlist/UTILIZADOR/PASSWORD/m3u_plus"></textarea>
+
+<button class="convert" onclick="converter()">CONVERTER</button>
+
+<p>Resultado convertido:</p>
+
+<textarea id="resultado" readonly placeholder="O resultado aparecerá aqui..."></textarea>
+
+<button class="copy" onclick="copiar()">COPIAR RESULTADO</button>
+<button class="clear" onclick="limpar()">LIMPAR</button>
+
+<div id="status"></div>
+</div>
+
+<script>
+function converter() {
+  const entrada = document.getElementById("entrada").value.trim();
+  const resultado = document.getElementById("resultado");
+  const status = document.getElementById("status");
+
+  resultado.value = "";
+  status.style.color = "#f87171";
+
+  try {
+    const url = new URL(entrada);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("Protocolo inválido.");
+    }
+
+    const partes = url.pathname.split("/").filter(Boolean);
+
+    if (
+      partes.length !== 4 ||
+      partes[0] !== "playlist" ||
+      !partes[1] ||
+      !partes[2] ||
+      !partes[3].startsWith("m3u")
+    ) {
+      throw new Error("Formato da linha inválido.");
+    }
+
+    const utilizador = decodeURIComponent(partes[1]);
+    const password = decodeURIComponent(partes[2]);
+    const tipo = partes[3];
+
+    const base = url.origin + "/get.php";
+
+    resultado.value = base +
+      "?username=" + encodeURIComponent(utilizador) +
+      "&password=" + encodeURIComponent(password) +
+      "&type=" + encodeURIComponent(tipo) +
+      "&output=mpegts";
+
+    status.style.color = "#4ade80";
+    status.textContent = "Conversão realizada com sucesso!";
+  } catch (e) {
+    status.textContent = "Erro: " + e.message;
+  }
+}
+
+async function copiar() {
+  const resultado = document.getElementById("resultado");
+  const status = document.getElementById("status");
+
+  if (!resultado.value) {
+    status.textContent = "Primeiro tens de converter uma linha.";
+    status.style.color = "#f87171";
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(resultado.value);
+    status.textContent = "Resultado copiado!";
+    status.style.color = "#4ade80";
+  } catch {
+    resultado.select();
+    document.execCommand("copy");
+    status.textContent = "Resultado copiado!";
+    status.style.color = "#4ade80";
+  }
+}
+
+function limpar() {
+  document.getElementById("entrada").value = "";
+  document.getElementById("resultado").value = "";
+  document.getElementById("status").textContent = "";
+}
+</script>
+</body>
+</html>
